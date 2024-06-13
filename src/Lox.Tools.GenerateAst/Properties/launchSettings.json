@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Lox.Tools.GenerateAst": {
+      "commandName": "Project",
+      "commandLineArgs": "./../../../../Lox"
+    }
+  }
+}
