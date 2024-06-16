@@ -15,7 +15,7 @@ static class Lox
         if (args.Length > 1)
         {
             Console.WriteLine("Usage: jlox [script]");
-            Environment.Exit(64);
+            System.Environment.Exit(64);
         }
         else if (args.Length == 1)
         {
@@ -32,8 +32,8 @@ static class Lox
         string fileContent = File.ReadAllText(Path.GetFullPath(path));
         Run(fileContent);
 
-        if (_hadError) Environment.Exit(65);
-        if (_hadRuntimeError) Environment.Exit(70);
+        if (_hadError) System.Environment.Exit(65);
+        if (_hadRuntimeError) System.Environment.Exit(70);
     }
 
     private static void RunPrompt()
@@ -54,12 +54,12 @@ static class Lox
         List<Token> tokens = scanner.ScanTokens();
 
         Parser parser = new(tokens);
-        Expr expression = parser.Parse();
+        List<Stmt> statements = parser.Parse();
 
         // Stop if there was a syntax error.
         if (_hadError) return;
 
-        _interpreter.Interpret(expression);
+        _interpreter.Interpret(statements);
     }
 
     public static void Error(int line, string message)
@@ -81,7 +81,7 @@ static class Lox
 
     internal static void RuntimeError(RuntimeError error)
     {
-        Console.WriteLine(error.Message + "\n[line " + error.Token.Line + "]");
+        Console.Error.WriteLine(error.Message + "\n[line " + error.Token.Line + "]");
         _hadRuntimeError = true;
     }
 

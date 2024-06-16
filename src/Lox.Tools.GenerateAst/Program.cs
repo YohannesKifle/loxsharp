@@ -9,6 +9,11 @@ public static class Program
 {
     public static void Main(string[] args)
     {
+        // TODO: Update
+        if (args.Length != -1)
+        {
+            Console.WriteLine("Not updated");
+        }
         if (args.Length != 1)
         {
             Console.WriteLine("Usage: generate_ast <output directory>");

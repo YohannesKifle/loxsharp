@@ -1,21 +1,31 @@
 ﻿using System;
+using System.Collections.Generic;
 using static Lox.TokenType;
 
 namespace Lox;
 
-internal class Interpreter : IVisitor<object>
+internal class Interpreter : IVisitor<object>, IStmtVisitor<Void>
 {
-    public void Interpret(Expr expression)
+    private Environment _environment = new();
+
+    public void Interpret(List<Stmt> statements)
     {
         try
         {
-            object value = Evaluate(expression);
-            Console.WriteLine(Stringify(value));
+            foreach (Stmt statement in statements)
+            {
+                Execute(statement);
+            }
         }
         catch (RuntimeError error)
         {
             Lox.RuntimeError(error);
         }
+    }
+
+    private void Execute(Stmt statement)
+    {
+        statement.Accept(this);
     }
 
     private static string Stringify(object obj)
@@ -29,6 +39,13 @@ internal class Interpreter : IVisitor<object>
         }
 
         return obj.ToString();
+    }
+
+    public object VisitAssignExpr(AssignExpr expr)
+    {
+        object value = Evaluate(expr.Value);
+        _environment.Assign(expr.Name, value);
+        return value;
     }
 
     public object VisitBinaryExpr(BinaryExpr expr)
@@ -103,6 +120,11 @@ internal class Interpreter : IVisitor<object>
         return null;
     }
 
+    public object VisitVariableExpr(VariableExpr expr)
+    {
+        return _environment.Get(expr.Name);
+    }
+
     private static void CheckNumberOperand(Token op, object operand)
     {
         if (operand is double) return;
@@ -115,12 +137,11 @@ internal class Interpreter : IVisitor<object>
         throw new RuntimeError(op, "Operands must be numbers.");
     }
 
+    // object is not null or false
     private static bool IsTruthy(object obj)
     {
         if (obj == null) return false;
-        if (obj is bool) return (bool)obj;
-
-        return true;
+        return obj is not bool || (bool)obj;
     }
 
     private object Evaluate(Expr expr)
@@ -134,5 +155,78 @@ internal class Interpreter : IVisitor<object>
         if (left == null) return false;
 
         return left.Equals(right);
+    }
+
+    public Void VisitPrintStmt(PrintStmt stmt)
+    {
+        object value = Evaluate(stmt.Expression);
+        Console.WriteLine(Stringify(value));
+        return Void.Value;
+    }
+
+    public Void VisitVarStmt(VarStmt stmt)
+    {
+        object value = null;
+        if (stmt.Initializer != null)
+        {
+            value = Evaluate(stmt.Initializer);
+        }
+
+        _environment.Define(stmt.Name.Lexeme, value);
+        return Void.Value;
+    }
+
+    public Void VisitBlockStmt(BlockStmt stmt)
+    {
+        ExecuteBlock(stmt.Statements, new Environment(_environment));
+        return Void.Value;
+    }
+
+    public Void VisitClassStmt(ClassStmt stmt)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Void VisitExpressionStmt(ExpressionStmt stmt)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Void VisitFunctionStmt(FunctionStmt stmt)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Void VisitIfStmt(IfStmt stmt)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Void VisitReturnStmt(ReturnStmt stmt)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Void VisitWhileStmt(WhileStmt stmt)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void ExecuteBlock(List<Stmt> statements, Environment environment)
+    {
+        Environment previous = _environment;
+        try
+        {
+            _environment = environment;
+
+            foreach (Stmt statement in statements)
+            {
+                Execute(statement);
+            }
+        }
+        finally
+        {
+            _environment = previous;
+        }
     }
 }

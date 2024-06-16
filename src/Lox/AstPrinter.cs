@@ -10,6 +10,11 @@ internal class AstPrinter : IVisitor<string>
         return expr.Accept(this);
     }
 
+    public string VisitAssignExpr(AssignExpr expr)
+    {
+        throw new NotImplementedException();
+    }
+
     public string VisitBinaryExpr(BinaryExpr expr)
     {
         return Parenthesize(expr.Op.Lexeme,
@@ -30,6 +35,11 @@ internal class AstPrinter : IVisitor<string>
     public string VisitUnaryExpr(UnaryExpr expr)
     {
         return Parenthesize(expr.Op.Lexeme, expr.Right);
+    }
+
+    public string VisitVariableExpr(VariableExpr expr)
+    {
+        throw new NotImplementedException();
     }
 
     private string Parenthesize(string name, params Expr[] exprs)
