@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "REPL": {
+      "commandName": "Project",
+      "dotnetRunMessages": true
+    },
+    "File": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "commandLineArgs": "test.lox"
+    }
+  }
+}

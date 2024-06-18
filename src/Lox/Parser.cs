@@ -33,7 +33,7 @@ internal class Parser
 
             return Statement();
         }
-        catch (ParseError error)
+        catch (ParseError)
         {
             Synchronize();
             return null;
@@ -56,7 +56,10 @@ internal class Parser
 
     private Stmt Statement()
     {
+        if (Match(FOR)) return ForStatement();
+        if (Match(IF)) return IfStatement();
         if (Match(PRINT)) return PrintStatement();
+        if (Match(WHILE)) return WhileStatement();
         if (Match(LEFT_BRACE)) return new BlockStmt(Block());
 
         return ExpressionStatement();
@@ -75,11 +78,84 @@ internal class Parser
         return statements;
     }
 
+    private Stmt ForStatement()
+    {
+        Consume(LEFT_PAREN, "Expect '(' after 'for'.");
+        Stmt initializer;
+        if (Match(SEMICOLON))
+        {
+            initializer = null;
+        }
+        else if (Match(VAR))
+        {
+            initializer = VarDeclaration();
+        }
+        else
+        {
+            initializer = ExpressionStatement();
+        }
+
+        Expr condition = null;
+        if (!Check(SEMICOLON))
+        {
+            condition = Expression();
+        }
+        Consume(SEMICOLON, "Expect ';' after loop condition.");
+
+        Expr increment = null;
+        if (!Check(RIGHT_PAREN))
+        {
+            increment = Expression();
+        }
+        Consume(RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        Stmt body = Statement();
+        if (increment != null)
+        {
+            body = new BlockStmt([body, new ExpressionStmt(increment)]);
+        }
+
+        condition ??= new LiteralExpr(true);
+        body = new WhileStmt(condition, body);
+
+        if (initializer != null)
+        {
+            body = new BlockStmt([initializer, body]);
+        }
+
+        return body;
+    }
+
+    private Stmt IfStatement()
+    {
+        Consume(LEFT_PAREN, "Expect '(' after 'if'.");
+        Expr condition = Expression();
+        Consume(RIGHT_PAREN, "Expect ')' after if condition.");
+        Stmt thenBranch = Statement();
+        Stmt elseBranch = null;
+        if (Match(ELSE))
+        {
+            elseBranch = Statement();
+        }
+
+        return new IfStmt(condition, thenBranch, elseBranch);
+    }
+
     private Stmt PrintStatement()
     {
         Expr value = Expression();
         Consume(SEMICOLON, "Expect ';' after value.");
         return new PrintStmt(value);
+    }
+
+    private Stmt WhileStatement()
+    {
+        Consume(LEFT_PAREN, "Expect '(' after 'while'.");
+        Expr condition = Expression();
+        Consume(RIGHT_PAREN, "Expect ')' after condition.");
+        Stmt body = Statement();
+
+        return new WhileStmt(condition, body);
     }
 
     private Stmt ExpressionStatement()
@@ -96,7 +172,7 @@ internal class Parser
 
     private Expr Assignment()
     {
-        Expr expr = Equality();
+        Expr expr = Or();
 
         if (Match(EQUAL))
         {
@@ -110,6 +186,34 @@ internal class Parser
             }
 
             Error(equals, "Invalid assignment target.");
+        }
+
+        return expr;
+    }
+
+    private Expr Or()
+    {
+        Expr expr = And();
+
+        while (Match(OR))
+        {
+            Token op = Previous();
+            Expr right = And();
+            expr = new LogicalExpr(expr, op, right);
+        }
+
+        return expr;
+    }
+
+    private Expr And()
+    {
+        Expr expr = Equality();
+
+        while (Match(AND))
+        {
+            Token op = Previous();
+            Expr right = Equality();
+            expr = new LogicalExpr(expr, op, right);
         }
 
         return expr;

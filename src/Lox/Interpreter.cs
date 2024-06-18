@@ -4,7 +4,7 @@ using static Lox.TokenType;
 
 namespace Lox;
 
-internal class Interpreter : IVisitor<object>, IStmtVisitor<Void>
+internal class Interpreter : IExprVisitor<object>, IStmtVisitor<Void>
 {
     private Environment _environment = new();
 
@@ -125,6 +125,22 @@ internal class Interpreter : IVisitor<object>, IStmtVisitor<Void>
         return _environment.Get(expr.Name);
     }
 
+    public object VisitLogicalExpr(LogicalExpr expr)
+    {
+        object left = Evaluate(expr.Left);
+
+        if (expr.Op.Type == OR)
+        {
+            if (IsTruthy(left)) return left;
+        }
+        else
+        {
+            if (!IsTruthy(left)) return left;
+        }
+
+        return Evaluate(expr.Right);
+    }
+
     private static void CheckNumberOperand(Token op, object operand)
     {
         if (operand is double) return;
@@ -182,12 +198,36 @@ internal class Interpreter : IVisitor<object>, IStmtVisitor<Void>
         return Void.Value;
     }
 
-    public Void VisitClassStmt(ClassStmt stmt)
+    public Void VisitExpressionStmt(ExpressionStmt stmt)
     {
-        throw new NotImplementedException();
+        Evaluate(stmt.Expression);
+        return Void.Value;
     }
 
-    public Void VisitExpressionStmt(ExpressionStmt stmt)
+    public Void VisitIfStmt(IfStmt stmt)
+    {
+        if (IsTruthy(Evaluate(stmt.Condition)))
+        {
+            Execute(stmt.ThenBranch);
+        }
+        else if (stmt.ElseBranch != null)
+        {
+            Execute(stmt.ElseBranch);
+        }
+        return Void.Value;
+    }
+
+    public Void VisitWhileStmt(WhileStmt stmt)
+    {
+        while (IsTruthy(Evaluate(stmt.Condition)))
+        {
+            stmt.Body.Accept(this);
+        }
+
+        return Void.Value;
+    }
+
+    public Void VisitClassStmt(ClassStmt stmt)
     {
         throw new NotImplementedException();
     }
@@ -197,17 +237,7 @@ internal class Interpreter : IVisitor<object>, IStmtVisitor<Void>
         throw new NotImplementedException();
     }
 
-    public Void VisitIfStmt(IfStmt stmt)
-    {
-        throw new NotImplementedException();
-    }
-
     public Void VisitReturnStmt(ReturnStmt stmt)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Void VisitWhileStmt(WhileStmt stmt)
     {
         throw new NotImplementedException();
     }

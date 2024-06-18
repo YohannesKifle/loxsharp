@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Lox;
 
-internal class AstPrinter : IVisitor<string>
+internal class AstPrinter : IExprVisitor<string>
 {
     public string Print(Expr expr)
     {
@@ -30,6 +30,11 @@ internal class AstPrinter : IVisitor<string>
     {
         if (expr.Value == null) return "nil";
         return expr.Value.ToString();
+    }
+
+    public string VisitLogicalExpr(LogicalExpr expr)
+    {
+        throw new NotImplementedException();
     }
 
     public string VisitUnaryExpr(UnaryExpr expr)

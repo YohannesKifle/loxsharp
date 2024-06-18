@@ -2,10 +2,10 @@
 
 abstract class Expr
 {
-	public abstract R Accept<R>(IVisitor<R> visitor);
+	public abstract R Accept<R>(IExprVisitor<R> visitor);
 }
 
-interface IVisitor<R>
+interface IExprVisitor<R>
 {
 	R VisitAssignExpr(AssignExpr expr);
 	R VisitBinaryExpr(BinaryExpr expr);
@@ -13,6 +13,7 @@ interface IVisitor<R>
 	R VisitLiteralExpr(LiteralExpr expr);
 	R VisitUnaryExpr(UnaryExpr expr);
 	R VisitVariableExpr(VariableExpr expr);
+	R VisitLogicalExpr(LogicalExpr expr);
 }
 
 internal class AssignExpr : Expr
@@ -23,7 +24,7 @@ internal class AssignExpr : Expr
         Value = value;
     }
 
-    public override R Accept<R>(IVisitor<R> visitor)
+    public override R Accept<R>(IExprVisitor<R> visitor)
     {
         return visitor.VisitAssignExpr(this);
     }
@@ -41,7 +42,7 @@ internal class BinaryExpr : Expr
 		Right = right;
 	}
 
-	public override R Accept<R>(IVisitor<R> visitor)
+	public override R Accept<R>(IExprVisitor<R> visitor)
 	{
 		return visitor.VisitBinaryExpr(this);
 	}
@@ -58,7 +59,7 @@ internal class GroupingExpr : Expr
 		Expression = expression;
 	}
 
-	public override R Accept<R>(IVisitor<R> visitor)
+	public override R Accept<R>(IExprVisitor<R> visitor)
 	{
 		return visitor.VisitGroupingExpr(this);
 	}
@@ -73,7 +74,7 @@ internal class LiteralExpr : Expr
 		Value = value;
 	}
 
-	public override R Accept<R>(IVisitor<R> visitor)
+	public override R Accept<R>(IExprVisitor<R> visitor)
 	{
 		return visitor.VisitLiteralExpr(this);
 	}
@@ -89,7 +90,7 @@ internal class UnaryExpr : Expr
 		Right = right;
 	}
 
-	public override R Accept<R>(IVisitor<R> visitor)
+	public override R Accept<R>(IExprVisitor<R> visitor)
 	{
 		return visitor.VisitUnaryExpr(this);
 	}
@@ -105,10 +106,29 @@ internal class VariableExpr : Expr
 		Name = name;
     }
 
-    public override R Accept<R>(IVisitor<R> visitor)
+    public override R Accept<R>(IExprVisitor<R> visitor)
     {
         return visitor.VisitVariableExpr(this);
     }
 
     public Token Name { get; private set; }
+}
+
+internal class LogicalExpr : Expr
+{
+    public LogicalExpr(Expr left, Token op, Expr right)
+    {
+        Left = left;
+        Op = op;
+        Right = right;
+    }
+
+    public override R Accept<R>(IExprVisitor<R> visitor)
+    {
+        return visitor.VisitLogicalExpr(this);
+    }
+
+    public Expr Left { get; private set; }
+    public Token Op { get; private set; }
+    public Expr Right { get; private set; }
 }
