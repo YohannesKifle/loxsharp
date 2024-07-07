@@ -6,7 +6,14 @@ namespace Lox;
 
 internal class Interpreter : IExprVisitor<object>, IStmtVisitor<Void>
 {
-    private Environment _environment = new();
+    private readonly Environment _globals = new();
+    private Environment _environment;
+
+    public Interpreter()
+    {
+        _globals.Define("clock", new Clock());
+        _environment = _globals;
+    }
 
     public void Interpret(List<Stmt> statements)
     {
@@ -141,6 +148,30 @@ internal class Interpreter : IExprVisitor<object>, IStmtVisitor<Void>
         return Evaluate(expr.Right);
     }
 
+    public object VisitCallExpr(CallExpr expr)
+    {
+        object callee = Evaluate(expr.Callee);
+
+        List<object> arguments = [];
+        foreach (Expr argument in expr.Arguments)
+        {
+            arguments.Add(Evaluate(argument));
+        }
+
+        if (callee is not ICallable)
+        {
+            throw new RuntimeError(expr.Paren, "Can only call functions and classes.");
+        }
+
+        ICallable function = (ICallable)callee;
+        if (arguments.Count != function.Arity)
+        {
+            throw new RuntimeError(expr.Paren, $"Expected {function.Arity} arguments but got {arguments.Count}.");
+        }
+
+        return function.Call(this, arguments);
+    }
+
     private static void CheckNumberOperand(Token op, object operand)
     {
         if (operand is double) return;
@@ -234,15 +265,20 @@ internal class Interpreter : IExprVisitor<object>, IStmtVisitor<Void>
 
     public Void VisitFunctionStmt(FunctionStmt stmt)
     {
-        throw new NotImplementedException();
+        LoxFunction function = new(stmt, _environment);
+        _environment.Define(stmt.Name.Lexeme, function);
+        return Void.Value;
     }
 
     public Void VisitReturnStmt(ReturnStmt stmt)
     {
-        throw new NotImplementedException();
+        object value = null;
+        if (stmt.Value != null) value = Evaluate(stmt.Value);
+
+        throw new ReturnException(value);
     }
 
-    private void ExecuteBlock(List<Stmt> statements, Environment environment)
+    internal void ExecuteBlock(List<Stmt> statements, Environment environment)
     {
         Environment previous = _environment;
         try

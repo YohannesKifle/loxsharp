@@ -21,6 +21,11 @@ internal class AstPrinter : IExprVisitor<string>
                             expr.Left, expr.Right);
     }
 
+    public string VisitCallExpr(CallExpr expr)
+    {
+        throw new NotImplementedException();
+    }
+
     public string VisitGroupingExpr(GroupingExpr expr)
     {
         return Parenthesize("group", expr.Expression);

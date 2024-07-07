@@ -1,4 +1,6 @@
-﻿namespace Lox;
+﻿using System.Collections.Generic;
+
+namespace Lox;
 
 abstract class Expr
 {
@@ -14,6 +16,7 @@ interface IExprVisitor<R>
 	R VisitUnaryExpr(UnaryExpr expr);
 	R VisitVariableExpr(VariableExpr expr);
 	R VisitLogicalExpr(LogicalExpr expr);
+	R VisitCallExpr(CallExpr expr);
 }
 
 internal class AssignExpr : Expr
@@ -131,4 +134,23 @@ internal class LogicalExpr : Expr
     public Expr Left { get; private set; }
     public Token Op { get; private set; }
     public Expr Right { get; private set; }
+}
+
+internal class CallExpr : Expr
+{
+    public CallExpr(Expr callee, Token paren, List<Expr> arguments)
+	{
+		Callee = callee;
+        Paren = paren;
+        Arguments = arguments;
+    }
+
+    public override R Accept<R>(IExprVisitor<R> visitor)
+	{
+        return visitor.VisitCallExpr(this);
+    }
+
+    public Expr Callee { get; private set; }
+    public Token Paren { get; private set; }
+    public List<Expr> Arguments { get; private set; }
 }
